@@ -1,0 +1,107 @@
+plugins {
+    id 'java'
+    id 'war'
+    id "nu.studer.jooq" version "3.0.2"
+    id 'net.ltgt.apt' version '0.10'
+}
+
+apply plugin: "nu.studer.jooq"
+apply plugin: "net.ltgt.apt"
+
+group 'company'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    javaLanguageLevel = '1.8'
+    generatedMapperSourcesDir = "${buildDir}/generated-src/mapstruct/main"
+}
+
+sourceSets.main {
+    ext.originalJavaSrcDirs = java.srcDirs
+    java.srcDir "${generatedMapperSourcesDir}"
+}
+
+sourceCompatibility = rootProject.javaLanguageLevel
+
+configurations {
+    mapstruct
+}
+
+dependencies {
+    //jooq DB
+    compile group: 'org.jooq', name: 'jooq', version: '3.11.7'
+    jooqRuntime 'postgresql:postgresql:9.1-901.jdbc4'
+    
+    compile 'org.jooq:jooq'
+
+    compileOnly 'org.projectlombok:lombok:1.18.4'
+
+    apt 'org.projectlombok:lombok:1.18.4'
+
+    //compile( 'org.mapstruct:mapstruct:1.2.0.Final' )
+   // mapstruct( 'org.mapstruct:mapstruct-processor:1.2.0.Final' )
+
+    compile group: 'javax', name: 'javaee-api', version: '8.0'
+
+    compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.25.1'
+
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.5'
+
+    compile group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+}
+
+
+
+jooq {
+    version = '3.11.7'
+    edition = 'OSS'
+    sample(sourceSets.main) {
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = 'jdbc:postgresql://localhost:5432/firma'
+            user = 'gozdzikluk'
+            password = 'test123'
+        }
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+            strategy {
+                name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+                // ...
+            }
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+                forcedTypes {
+                    forcedType {
+                        name = 'varchar'
+                        expression = '.*'
+                        types = 'JSONB?'
+                    }
+                    forcedType {
+                        name = 'varchar'
+                        expression = '.*'
+                        types = 'INET'
+                    }
+                }
+                // ...
+            }
+            generate {
+                relations = true
+                deprecated = false
+                records = true
+                immutablePojos = false
+                fluentSetters = true
+                // ...
+            }
+            target {
+                packageName = 'nu.studer.sample'
+                // directory = ...
+            }
+        }
+    }
+}
